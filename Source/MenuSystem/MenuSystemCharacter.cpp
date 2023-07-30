@@ -11,11 +11,14 @@
 
 #include "OnlineSubsystem.h"
 #include "Interfaces/OnlineSessionInterface.h"
+#include "OnlineSessionSettings.h"
 
 //////////////////////////////////////////////////////////////////////////
 // AMenuSystemCharacter
 
-AMenuSystemCharacter::AMenuSystemCharacter() {
+AMenuSystemCharacter::AMenuSystemCharacter():
+	CreateSessionCompleteDelegate(FOnCreateSessionCompleteDelegate::CreateUObject(this,&AMenuSystemCharacter::OnCreateSessionComplete))
+{
 	// Set size for collision capsule
 	GetCapsuleComponent()->InitCapsuleSize(42.f, 96.0f);
 
@@ -87,6 +90,49 @@ void AMenuSystemCharacter::SetupPlayerInputComponent(class UInputComponent* Play
 
 	// VR headset functionality
 	PlayerInputComponent->BindAction("ResetVR", IE_Pressed, this, &AMenuSystemCharacter::OnResetVR);
+}
+
+void AMenuSystemCharacter::CreateGameSeesion()
+{
+	if (!OnlineSessionInterface.IsValid())
+	{
+		return;
+	}
+
+	auto ExistingSession = OnlineSessionInterface->GetNamedSession(NAME_GameSession);
+
+	if (ExistingSession != nullptr)
+	{
+		OnlineSessionInterface->DestroySession(NAME_GameSession);
+	}
+
+	OnlineSessionInterface->AddOnCreateSessionCompleteDelegate_Handle(CreateSessionCompleteDelegate)
+
+	TSharedPtr<FOnlineSessionSettings> SessionSettings = MakeShareable(new FOnlineSessionSettings());
+	const ULocalPlayer* LocalPlayer = GetWorld()->GetFirstLocalPlayerFromController();
+	OnlineSessionInterface->CreateSession(*LocalPlayer->GetPreferredUniqueNetId(),NAME_GameSession,*SessionSettings);
+}
+
+void AMenuSystemCharacter::OnCreateSessionComplete(FName SessionName, bool bWasSuccessful)
+{
+	if (bWasSuccessful)
+	{
+		if (GEngine) {
+			GEngine->AddOnScreenDebugMessage(
+				-1, 15.f, FColor::Green,
+				FString::Printf(TEXT("Create Session: %s"),*SessionName.ToString())
+			);
+		}
+	}
+	else
+	{
+		if (GEngine) {
+			GEngine->AddOnScreenDebugMessage(
+				-1, 15.f, FColor::Red,
+				FString::Printf(TEXT("failed to create session"))
+			);
+		}
+	}
 }
 
 

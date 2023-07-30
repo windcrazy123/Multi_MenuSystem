@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
+#include "Interfaces/OnlineSessionInterface.h"
 #include "MenuSystemCharacter.generated.h"
 
 UCLASS(config=Game)
@@ -73,5 +74,14 @@ public:
 	//IOnlineSessionPtr OnlineSessionInterface;
 	TSharedPtr<class IOnlineSession, ESPMode::ThreadSafe> OnlineSessionInterface;
 
+protected:
+	UFUNCTION(BlueprintCallable)
+	void CreateGameSeesion();
+
+	void OnCreateSessionComplete(FName SessionName, bool bWasSuccessful);
+
+private:
+	//FOnCreateSessionCompleteDelegate CreateSessionCompleteDelegate;
+	TDelegate<void(FName,bool)> CreateSessionCompleteDelegate;
 };
 
