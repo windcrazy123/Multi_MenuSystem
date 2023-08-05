@@ -66,6 +66,8 @@ DerivedDataCache
 # Built data for maps
 *_BuiltData.uasset
 
+#unreal engine StarterContent
+Content\StarterContent
 
 
 #Rider
