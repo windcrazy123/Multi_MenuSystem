@@ -3,7 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "OnlineSessionSettings.h"
+
 #include "Interfaces/OnlineSessionInterface.h"
 #include "Subsystems/GameInstanceSubsystem.h"
 
@@ -45,6 +45,8 @@ protected:
 
 private:
 	IOnlineSessionPtr SessionInterface;
+	//the settings that we used when we last create session
+	TSharedPtr<FOnlineSessionSettings> LastSessionSettings;
 
 	//To add to the Online Session Interface delegate list.
 	//we 'll bind our MultiplayerSessionsSubsystem internal callbacks to these.
