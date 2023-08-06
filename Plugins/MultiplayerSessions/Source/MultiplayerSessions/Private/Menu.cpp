@@ -2,11 +2,14 @@
 
 
 #include "Menu.h"
-
 #include "Components/Button.h"
 
-void UMenu::MenuSetup()
+#include "MultiplayerSessionsSubsystem.h"
+
+void UMenu::MenuSetup(int32 NumOfPublicConnections, FString TypeOfMatch)
 {
+	NumPublicConnections = NumOfPublicConnections;
+	MatchType = TypeOfMatch;
 	AddToViewport();
 	SetVisibility(ESlateVisibility::Visible);
 	bIsFocusable = true;
@@ -24,6 +27,12 @@ void UMenu::MenuSetup()
 			PlayerController->SetShowMouseCursor(true);
 		}
 	}
+
+	UGameInstance* GameInstance = GetGameInstance();
+	if (GameInstance)
+	{
+		MultiplayerSessionsSubsystem = GameInstance->GetSubsystem<UMultiplayerSessionsSubsystem>();
+	}
 }
 
 bool UMenu::Initialize()
@@ -38,9 +47,15 @@ bool UMenu::Initialize()
 	}
 	if (JoinButton)
 	{
-		JoinButton->OnClicked.AddDynamic(this,&UMenu::JoinButtionClicked); 
+		JoinButton->OnClicked.AddDynamic(this,&UMenu::JoinButtonClicked); 
 	}
 	return true;
+}
+
+void UMenu::OnLevelRemovedFromWorld(ULevel* InLevel, UWorld* InWorld)
+{
+	MenuTearDown();
+	Super::OnLevelRemovedFromWorld(InLevel, InWorld);
 }
 
 void UMenu::HostButtonClicked()
@@ -51,14 +66,40 @@ void UMenu::HostButtonClicked()
 			FString::Printf(TEXT("Host button clicked"))
 		);
 	}
+
+	if (MultiplayerSessionsSubsystem)
+	{
+		MultiplayerSessionsSubsystem->CreateSession(NumPublicConnections,MatchType);
+		UWorld* World = GetWorld();
+		if (World)
+		{
+			World->ServerTravel("/Game/ThirdPersonCPP/Maps/Lobby?listen");
+		}
+	}
 }
 
-void UMenu::JoinButtionClicked()
+void UMenu::JoinButtonClicked()
 {
 	if (GEngine) {
 		GEngine->AddOnScreenDebugMessage(
 			-1, 15.f, FColor::Yellow,
 			FString::Printf(TEXT("Join button clicked"))
 		);
+	}
+}
+
+void UMenu::MenuTearDown()
+{
+	RemoveFromParent();
+	UWorld* World = GetWorld();
+	if (World)
+	{
+		APlayerController* PlayerController = World->GetFirstPlayerController();
+		if (PlayerController)
+		{
+			FInputModeGameOnly InputModeGameOnly;
+			PlayerController->SetInputMode(InputModeGameOnly);
+			PlayerController->SetShowMouseCursor(false);
+		}
 	}
 }

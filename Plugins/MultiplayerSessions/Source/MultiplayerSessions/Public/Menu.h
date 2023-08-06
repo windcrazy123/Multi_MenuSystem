@@ -15,11 +15,12 @@ class MULTIPLAYERSESSIONS_API UMenu : public UUserWidget
 	GENERATED_BODY()
 public:
 	UFUNCTION(BlueprintCallable)
-	void MenuSetup();
+	void MenuSetup(int32 NumOfPublicConnections = 4, FString TypeOfMatch = FString(TEXT("FreeForAll")));
 
 protected:
 
 	virtual bool Initialize() override;
+	virtual void OnLevelRemovedFromWorld(ULevel* InLevel, UWorld* InWorld) override;
 private:
 	//BindWidget: the button widget on BP will be linked to these button variable in C++
 	//and the C++ variable has to have the exact same name as the button on BP
@@ -35,6 +36,13 @@ private:
 	void HostButtonClicked();
 
 	UFUNCTION()
-	void JoinButtionClicked();
+	void JoinButtonClicked();
 
+	void MenuTearDown();
+
+	//The subsystem designed to handle all online session functionality
+	class UMultiplayerSessionsSubsystem* MultiplayerSessionsSubsystem;
+
+	int32 NumPublicConnections{4};
+	FString MatchType{TEXT("FreeForAll")};
 };
