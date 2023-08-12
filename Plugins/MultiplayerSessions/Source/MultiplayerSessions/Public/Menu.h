@@ -21,6 +21,10 @@ protected:
 
 	virtual bool Initialize() override;
 	virtual void OnLevelRemovedFromWorld(ULevel* InLevel, UWorld* InWorld) override;
+
+	// Callbacks for the custom delegates on the MultiplayerSessionsSubsystem
+	UFUNCTION()
+	void OnCreateSession(bool bWasSuccessful);
 private:
 	//BindWidget: the button widget on BP will be linked to these button variable in C++
 	//and the C++ variable has to have the exact same name as the button on BP
@@ -31,7 +35,7 @@ private:
 	UButton* JoinButton;
 
 	//bind this function to an on click event or delegate that exists in the UButton class
-	//these have to be UFUNCTION
+	//these have to be UFUNCTION, because the OnClicked event is a DYNAMIC
 	UFUNCTION()
 	void HostButtonClicked();
 
