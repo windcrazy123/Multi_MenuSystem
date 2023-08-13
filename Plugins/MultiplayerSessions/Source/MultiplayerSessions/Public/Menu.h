@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
+#include "Interfaces/OnlineSessionInterface.h"
 #include "Menu.generated.h"
 
 /**
@@ -25,6 +26,12 @@ protected:
 	// Callbacks for the custom delegates on the MultiplayerSessionsSubsystem
 	UFUNCTION()
 	void OnCreateSession(bool bWasSuccessful);
+	void OnFindSessions(const TArray<FOnlineSessionSearchResult>& SessionResult, bool bWasSuccessful);
+	void OnJoinSession(EOnJoinSessionCompleteResult::Type Result);
+	UFUNCTION()
+	void OnDestroySession(bool bWasSuccessful);
+	UFUNCTION()
+	void OnStartSession(bool bWasSuccessful);
 private:
 	//BindWidget: the button widget on BP will be linked to these button variable in C++
 	//and the C++ variable has to have the exact same name as the button on BP

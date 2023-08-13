@@ -5,6 +5,8 @@
 #include "Components/Button.h"
 
 #include "MultiplayerSessionsSubsystem.h"
+#include "OnlineSessionSettings.h"
+#include "OnlineSubsystem.h"
 
 void UMenu::MenuSetup(int32 NumOfPublicConnections, FString TypeOfMatch)
 {
@@ -37,6 +39,10 @@ void UMenu::MenuSetup(int32 NumOfPublicConnections, FString TypeOfMatch)
 	if (MultiplayerSessionsSubsystem)
 	{
 		MultiplayerSessionsSubsystem->MultiplayerOnCreateSessionComplete.AddDynamic(this, &UMenu::OnCreateSession);
+		MultiplayerSessionsSubsystem->MultiplayerOnFindSessionsComplete.AddUObject(this, &UMenu::OnFindSessions);
+		MultiplayerSessionsSubsystem->MultiplayerOnJoinSessionComplete.AddUObject(this, &UMenu::OnJoinSession);
+		MultiplayerSessionsSubsystem->MultiplayerOnDestroySessionComplete.AddDynamic(this, &UMenu::OnDestroySession);
+		MultiplayerSessionsSubsystem->MultiplayerOnStartSessionComplete.AddDynamic(this, &UMenu::OnStartSession);
 	}
 }
 
@@ -84,6 +90,53 @@ void UMenu::OnCreateSession(bool bWasSuccessful)
 	}
 }
 
+void UMenu::OnFindSessions(const TArray<FOnlineSessionSearchResult>& SessionResult, bool bWasSuccessful)
+{
+	if (MultiplayerSessionsSubsystem == nullptr)
+	{
+		return;
+	}
+
+	for(auto Result : SessionResult)
+	{
+		FString SettingsValue;
+		Result.Session.SessionSettings.Get(FName("MatchType"), SettingsValue);
+		if (SettingsValue == MatchType)
+		{
+			MultiplayerSessionsSubsystem->JoinSession(Result);
+			return;
+		}
+	}
+}
+
+void UMenu::OnJoinSession(EOnJoinSessionCompleteResult::Type Result)
+{
+	IOnlineSubsystem* Subsystem = IOnlineSubsystem::Get();
+	if (Subsystem)
+	{
+		IOnlineSessionPtr SessionInterface = Subsystem->GetSessionInterface();
+		if (SessionInterface.IsValid())
+		{
+			FString Address;
+			SessionInterface->GetResolvedConnectString(NAME_GameSession, Address);
+
+			APlayerController* PlayerController = GetGameInstance()->GetFirstLocalPlayerController();
+			if (PlayerController)
+			{
+				PlayerController->ClientTravel(Address, ETravelType::TRAVEL_Absolute);
+			}
+		}
+	}
+}
+
+void UMenu::OnDestroySession(bool bWasSuccessful)
+{
+}
+
+void UMenu::OnStartSession(bool bWasSuccessful)
+{
+}
+
 void UMenu::HostButtonClicked()
 {
 	if (MultiplayerSessionsSubsystem)
@@ -99,6 +152,10 @@ void UMenu::JoinButtonClicked()
 			-1, 15.f, FColor::Yellow,
 			FString::Printf(TEXT("Join button clicked"))
 		);
+	}
+	if (MultiplayerSessionsSubsystem)
+	{
+		MultiplayerSessionsSubsystem->FindSession(10000);
 	}
 }
 

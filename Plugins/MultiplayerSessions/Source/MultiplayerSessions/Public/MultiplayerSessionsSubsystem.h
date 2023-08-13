@@ -10,7 +10,15 @@
 #include "MultiplayerSessionsSubsystem.generated.h"
 
 // Declaring our own custom delegates for the Menu class to bind callbacks to
+//MULTICAST: once it's broadcast, multiple classes can bind their functions to it
+//DYNAMIC: the delegate can be serialized and they can be saved or loaded from within a blueprint graph;
+// In BP they're called event dispatchers
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FMultiplayerOnCreateSessionComplete, bool, bWasSuccessful);
+// FOnlineSessionSearchResult is not a UCLASS or USTRUCT, so we cannot make this a dynamic delegate
+DECLARE_MULTICAST_DELEGATE_TwoParams(FMultiplayerOnFindSessionsComplete, const TArray<FOnlineSessionSearchResult>& SessionResult, bool bWasSuccessful);
+DECLARE_MULTICAST_DELEGATE_OneParam(FMultiplayerOnJoinSessionComplete, EOnJoinSessionCompleteResult::Type Result);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FMultiplayerOnDestroySessionComplete, bool, bWasSuccessful);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FMultiplayerOnStartSessionComplete, bool, bWasSuccessful);
 
 /**
  * 
@@ -39,6 +47,10 @@ public:
 
 	// Our own custom delegates for the Menu class to bind callbacks to
 	FMultiplayerOnCreateSessionComplete MultiplayerOnCreateSessionComplete;
+	FMultiplayerOnFindSessionsComplete MultiplayerOnFindSessionsComplete;
+	FMultiplayerOnJoinSessionComplete MultiplayerOnJoinSessionComplete;
+	FMultiplayerOnDestroySessionComplete MultiplayerOnDestroySessionComplete;
+	FMultiplayerOnStartSessionComplete MultiplayerOnStartSessionComplete;
 protected:
 	// Callback Funcions
 	//Internal callbacks for the delegates we'll add to the Online Session Interface delegate list.
@@ -53,6 +65,7 @@ private:
 	IOnlineSessionPtr SessionInterface;
 	//the settings that we used when we last create session
 	TSharedPtr<FOnlineSessionSettings> LastSessionSettings;
+	TSharedPtr<FOnlineSessionSearch> LastSessionSearch;
 
 	//To add to the Online Session Interface delegate list.
 	//we 'll bind our MultiplayerSessionsSubsystem internal callbacks to these.
