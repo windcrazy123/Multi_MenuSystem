@@ -59,7 +59,7 @@ bool UMenu::Initialize()
 	}
 	if (JoinButton)
 	{
-		JoinButton->OnClicked.AddDynamic(this,&UMenu::JoinButtonClicked); 
+		JoinButton->OnClicked.AddDynamic(this, &UMenu::JoinButtonClicked);
 	}
 	return true;
 }
@@ -88,17 +88,18 @@ void UMenu::OnCreateSession(bool bWasSuccessful)
 				FString::Printf(TEXT("failed to create session"))
 			);
 		}
+		HostButton->SetIsEnabled(true);
 	}
 }
 
-void UMenu::OnFindSessions(const TArray<FOnlineSessionSearchResult>& SessionResult, bool bWasSuccessful)
+void UMenu::OnFindSessions(const TArray<FOnlineSessionSearchResult>& SessionResults, bool bWasSuccessful)
 {
 	if (MultiplayerSessionsSubsystem == nullptr)
 	{
 		return;
 	}
 
-	for(auto Result : SessionResult)
+	for (auto Result : SessionResults)
 	{
 		FString SettingsValue;
 		Result.Session.SessionSettings.Get(FName("MatchType"), SettingsValue);
@@ -107,6 +108,10 @@ void UMenu::OnFindSessions(const TArray<FOnlineSessionSearchResult>& SessionResu
 			MultiplayerSessionsSubsystem->JoinSession(Result);
 			return;
 		}
+	}
+	if (!bWasSuccessful || SessionResults.Num() == 0)
+	{
+		JoinButton->SetIsEnabled(true);
 	}
 }
 
@@ -128,6 +133,12 @@ void UMenu::OnJoinSession(EOnJoinSessionCompleteResult::Type Result)
 			}
 		}
 	}
+	// It will happened: session still exists and someone exited without destroying that session,
+	//so until DestroySession is called, a session still exists out there, but we can't join it as there is no valid address to travel to 
+	if (Result != EOnJoinSessionCompleteResult::Success)
+	{
+		JoinButton->SetIsEnabled(true);
+	}
 }
 
 void UMenu::OnDestroySession(bool bWasSuccessful)
@@ -140,23 +151,19 @@ void UMenu::OnStartSession(bool bWasSuccessful)
 
 void UMenu::HostButtonClicked()
 {
+	HostButton->SetIsEnabled(false);
 	if (MultiplayerSessionsSubsystem)
 	{
-		MultiplayerSessionsSubsystem->CreateSession(NumPublicConnections,MatchType);
+		MultiplayerSessionsSubsystem->CreateSession(NumPublicConnections, MatchType);
 	}
 }
 
 void UMenu::JoinButtonClicked()
 {
-	if (GEngine) {
-		GEngine->AddOnScreenDebugMessage(
-			-1, 15.f, FColor::Yellow,
-			FString::Printf(TEXT("Join button clicked"))
-		);
-	}
+	JoinButton->SetIsEnabled(false);
 	if (MultiplayerSessionsSubsystem)
 	{
-		MultiplayerSessionsSubsystem->FindSession(10000);
+		MultiplayerSessionsSubsystem->FindSessions(10000);
 	}
 }
 
